@@ -5,6 +5,7 @@ import com.google.gson.JsonParser
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.VoiceChannel
 import org.apache.commons.lang.StringEscapeUtils
+import java.io.File
 import java.io.FileReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -79,4 +80,9 @@ fun getPropertiesFromResourceFile(fileInResourcesFolder: String): Properties {
     return Properties().apply {
         load(reader)
     }
+}
+
+fun File.writeLine(line: String) = this.bufferedWriter().use {
+    it.write(line)
+    it.newLine()
 }

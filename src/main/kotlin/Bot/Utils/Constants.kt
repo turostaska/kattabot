@@ -12,6 +12,8 @@ object Constants {
     const val THINKING = ":thinking:"
     const val TRIUMPH = ":triumph:"
     const val FACE_WITH_RAISED_EYEBROWS = ":face_with_raised_eyebrow:"
+    const val SWEAT = ":sweat:"
+    const val HUGGING = ":hugging:"
 
     @JvmStatic
     var defaultTextChannels: Map<Guild, TextChannel>? = null

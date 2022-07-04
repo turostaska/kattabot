@@ -1,212 +1,162 @@
-package Bot.Service;
+package Bot.Service
 
-import Bot.ActualCommands.TextCommands.HangmanCommand;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import Bot.ActualCommands.TextCommands.HangmanCommand
+import Bot.Utils.Constants
+import Bot.Utils.writeLine
+import net.dv8tion.jda.api.entities.MessageChannel
+import java.io.*
+import java.util.*
+import kotlin.system.exitProcess
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ThreadLocalRandom;
+const val wordsFile = "data/words_hu.txt"
 
-public class Hangman {
+class Hangman(
+    val channel: MessageChannel,
+) {
+    private var status = 0
 
-    public static int errorCountLimit = 11;
+    private val wordList = File(wordsFile).readLines().filter{ it.isNotBlank() }.map { it.lowercase() }.toList()
 
-    private final String wordsFile = "data/words_hu.txt";
+    private var currentWord: String = ""
+    private var maskedWord: String = ""
 
-    private int status = 0;
-
-    int randomInt = 3;
-    int serialNumber = 0;  //because of the upper limit
-    String line = null;
-    String word = null;
-    String backgroundWord;
-    char currentGuess;
-    MessageChannel channel;
-
-    int errorCount = 0;
-
-
-    String guessedLetters = "";
-
-    public Hangman(MessageChannel _channel) {
-        HangmanCommand.gameInProgress = true;
-        channel = _channel;
-    }
-
-    public void setCurrentGuess(char currentGuess) {
-        if (Character.isAlphabetic(currentGuess)) {
-            this.currentGuess = currentGuess;
-            guess();
-        } else {
-            channel.sendMessage("Gonna need a letter!").queue();
-        }
-    }
-
-    void guess() {
-        boolean talalat = false;
-        for (int i = 0; i < word.length(); i++) {
-            if (currentGuess == word.charAt(i)) {
-                char[] hatterszoChar = backgroundWord.toCharArray();
-                hatterszoChar[i] = currentGuess;
-                backgroundWord = String.valueOf(hatterszoChar);
-                talalat = true;
-            }
-            if (i == word.length() - 1 && !talalat) {
-                errorCount++;
-            }
-        }
-
-        if (!(backgroundWord).equals(word)) {
-            guessedLetters += currentGuess;
-            StringBuilder letters = new StringBuilder();
-            for (var c : guessedLetters.toCharArray())
-                letters.append(c).append(", ");
-
-            if (errorCount < errorCountLimit) {
-                channel.sendMessage("Error count: " + errorCount + "\n" + backgroundWord + "\nGuess another letter!\n" + "Already guessed letters: " + letters.toString()).queue();
+    var currentGuess = 0.toChar()
+        set(value) {
+            if (Character.isAlphabetic(currentGuess.code)) {
+                field = value.lowercaseChar()
+                guess()
             } else {
-                channel.sendMessage(backgroundWord + "\nYou lost!!\nThe word was " + word + "!").queue();
-                HangmanCommand.gameInProgress = false;
-                guessedLetters = "";
+                channel.sendMessage("Gonna need a letter!").queue()
             }
+        }
 
+    private var errorCount = 0
+    private val guessedLetters = mutableSetOf<Char>()
+
+    init {
+        HangmanCommand.gameInProgress = true
+    }
+
+    @Throws(RuntimeException::class)
+    fun chooseWord() {
+        currentWord = wordList.random()
+        require (currentWord.isNotBlank()) { "Couldn't fetch a word from the list!" }
+        maskedWord = "-".repeat(currentWord.length)
+    }
+
+    private val wordRevealed get() = (maskedWord == currentWord)
+    private val wordNotYetRevealed get() = !wordRevealed
+
+    private fun guess() {
+        // todo: check if guess in guessedLetters
+        // todo: guess as parameter
+
+        var guessIsCorrect = false
+        val maskedChars = maskedWord.toCharArray()
+        currentWord.forEachIndexed { index, char ->
+            if (currentGuess == char) {
+                maskedChars[index] = currentGuess
+                guessIsCorrect = true
+            }
+        }
+        if (!guessIsCorrect) errorCount++
+        maskedWord = maskedChars.toString()
+
+        if (wordNotYetRevealed) {
+            guessedLetters += currentGuess
+            val letters = guessedLetters.joinToString()
+            if (errorCount < errorCountLimit) {
+                channel.sendMessage("""
+                    Error count: $errorCount
+                    $maskedWord
+                    Guess another letter!
+                    Already guessed letters: $letters
+                """).queue()
+            } else { // Game over
+                channel.sendMessage("""
+                    $maskedWord
+                    You lost! ${Constants.SWEAT}${Constants.SWEAT}
+                    The word was $currentWord!
+                """).queue()
+                HangmanCommand.gameInProgress = false
+                guessedLetters.clear()
+            }
         } else {
-            channel.sendMessage(backgroundWord + "\nYou won!").queue();
-            HangmanCommand.gameInProgress = false;
-            guessedLetters = "";
+            channel.sendMessage("""
+                $maskedWord
+                You won! ${Constants.HUGGING}${Constants.HUGGING}${Constants.HUGGING}
+            """).queue()
+            HangmanCommand.gameInProgress = false
+            guessedLetters.clear()
         }
     }
 
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public void statuszCheck() throws Exception {
-        switch (status) {
-
-            case 0:
-                start();
-                break;
-            case 1:
-                stop();
-                break;
-            case 2:
-                restart();
-                break;
+    @Throws(Exception::class)
+    fun statusCheck() {
+        when (status) {
+            0 -> start()
+            1 -> stop()
+            2 -> restart()
         }
     }
 
-    public void start() throws Exception {
-        beolvas();
-        errorCount = 0;
-        String wordToSend = backgroundWord + "\n Guess a letter!";
-        channel.sendMessage(wordToSend).queue();
-
+    @Throws(Exception::class)
+    fun start() {
+        chooseWord()
+        errorCount = 0
+        channel.sendMessage("""
+            $maskedWord
+            Guess a letter!
+        """).queue()
     }
 
-    public void restart() throws Exception {
-        HangmanCommand.gameInProgress = true;
-        errorCount = 0;
-        channel.sendMessage("Restart:\n");
-        setStatus(0);
-        statuszCheck();
+    @Throws(Exception::class)
+    fun restart() {
+        HangmanCommand.gameInProgress = true
+        errorCount = 0
+        channel.sendMessage("Restart:\n")
+        status = 0
+        statusCheck()
     }
 
-    public void stop() {
-        System.exit(1);
-    }
-
-
-    public void beolvas() throws Exception {
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(wordsFile, StandardCharsets.UTF_8));
-            serialNumber = getSerialNumber();  //upper limit
-            randomInt = randomnumber(serialNumber);
-            try {
-                int olvasottSor = 1;
-                while ((line = br.readLine()) != null) {
-                    if (olvasottSor == randomInt) {
-                        word = line.toLowerCase();
-                    }
-                    olvasottSor++;
-                }
-            } catch (java.io.IOException f) {
-                channel.sendMessage("Some kind of error happened while reading the file!").queue();
-            } finally {
-                if (line != null)
-                    br.close();
-            }
-
-        } catch (FileNotFoundException e) {
-            channel.sendMessage("File not found!").queue();
-            e.printStackTrace();
-        }
-
-        backgroundWord = "";
-        for (int i = 0; i < word.length(); i++) {
-            backgroundWord = backgroundWord + "-";
-        }
-    }
-
-
-    public int getSerialNumber() throws IOException {
-        int sorokszama = 0;
-        BufferedReader br = new BufferedReader(new FileReader(wordsFile));
-        while (br.readLine() != null) sorokszama++;
-        br.close();
-        return sorokszama;
-    }
-
-
-    public int randomnumber(int felsokorlat) {
-
-        int randomNum = ThreadLocalRandom.current().nextInt(1, felsokorlat + 1);
-        return randomNum;
-
+    private fun stop() {
+        channel.sendMessage("Crashing this VM, with no survivors.").queue()
+        exitProcess(1)
     }
 
     //segitseg(keresettSzo)   shows a letter for 33% of the error points
-
-    public String segitseg(String kapottSzo, String hatterSzo) {
-        boolean vanHianyzoBetu = false;
-        int randomNumber = randomnumber(kapottSzo.length() - 1);
-        for (int i = 0; i < kapottSzo.length(); i++) {
-            if (hatterSzo.charAt(i) == '-') {
-                vanHianyzoBetu = true;
-                break;
+    fun segitseg(kapottSzo: String, hatterSzo: String): String {
+        var hatterSzo = hatterSzo
+        var vanHianyzoBetu = false
+        var randomNumber = randomnumber(kapottSzo.length - 1)
+        for (i in 0 until kapottSzo.length) {
+            if (hatterSzo[i] == '-') {
+                vanHianyzoBetu = true
+                break
             }
         }
         if (vanHianyzoBetu) {
-            while (hatterSzo.charAt(randomNumber) != '-') {
-                randomNumber = randomnumber(kapottSzo.length() - 1);
+            while (hatterSzo[randomNumber] != '-') {
+                randomNumber = randomnumber(kapottSzo.length - 1)
             }
-
         } else {
-            return hatterSzo;
+            return hatterSzo
         }
-        for (int i = 0; i < kapottSzo.length(); i++) {
-            if (kapottSzo.charAt(randomNumber) == kapottSzo.charAt(i)) {
-                char[] hatterszoChar = hatterSzo.toCharArray();
-                hatterszoChar[i] = kapottSzo.charAt(i);
-                hatterSzo = String.valueOf(hatterszoChar);
+        for (i in kapottSzo.indices) {
+            if (kapottSzo[randomNumber] == kapottSzo[i]) {
+                val hatterszoChar = hatterSzo.toCharArray()
+                hatterszoChar[i] = kapottSzo[i]
+                hatterSzo = String(hatterszoChar)
             }
         }
-        return hatterSzo.toLowerCase();
+        return hatterSzo.lowercase(Locale.getDefault())
     }
 
-    //for adding a letter
-    public void szavatHozzaad(String szotHozzaad) throws Exception {
+    @Throws(Exception::class)
+    fun addWord(word: String) = File(wordsFile).writeLine(word)
 
-        String szoHozzaadas = szotHozzaad;
-        BufferedWriter writer = new BufferedWriter(new FileWriter(wordsFile, true));
-        writer.newLine();
-        writer.write(szoHozzaadas);
-        writer.close();
-
+    companion object {
+        @JvmField
+        var errorCountLimit = 11
     }
 }

@@ -1,87 +1,83 @@
-package Bot.ActualCommands.TextCommands;
+package Bot.ActualCommands.TextCommands
 
-import Bot.CommandManagement.ICommand;
-import Bot.Service.Hangman;
-import Bot.Utils.Constants;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import Bot.CommandManagement.ICommand
+import Bot.Service.Hangman
+import Bot.Utils.Constants
+import net.dv8tion.jda.api.entities.MessageChannel
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import java.util.*
 
-import java.util.List;
-
-public class HangmanCommand implements ICommand {
-
-    Hangman hangman;
-    public static boolean gameInProgress = false;
-
-    @Override
-    public String command() {
-        return "hangman";
+class HangmanCommand : ICommand {
+    var hangman: Hangman? = null
+    override fun command(): String {
+        return "hangman"
     }
 
-    @Override
-    public String help() {
-        return "Usage:\n" +
-                "Start: `!hangman/hm`\n" +
-                "Afterwards: `!hangman/hm <your letter>`\n" +
-                "Stop: `!hangman/hm stop`\n" +
-                "Change the maximum error count: `!hangman/hm errorcount <your number>`\n";
+    override fun help(): String {
+        return """
+            Usage:
+            Start: `!hangman/hm`
+            Afterwards: `!hangman/hm <your letter>`
+            Stop: `!hangman/hm stop`
+            Change the maximum error count: `!hangman/hm errorcount <your number>`
+            
+            """.trimIndent()
     }
 
-    @Override
-    public void execute(String[] args, MessageReceivedEvent event) {
-
-        MessageChannel channel = event.getChannel();
-
+    override fun execute(args: Array<String>, event: MessageReceivedEvent) {
+        val channel = event.channel
         if (!gameInProgress) {
-            if (args.length > 1) {
-                if (args[1].toLowerCase().equals("errorcount")) {
+            if (args.size > 1) {
+                if (args[1].lowercase(Locale.getDefault()) == "errorcount") {
                     try {
-                        Hangman.errorCountLimit = Integer.parseInt(args[2]);
-                        channel.sendMessage("Error count changed!!").queue();
-                    } catch (NumberFormatException e) {
-                        channel.sendMessage("Please give a number " + Constants.PENSIVE_CHAIN).queue();
+                        Hangman.errorCountLimit = args[2].toInt()
+                        channel.sendMessage("Error count changed!!").queue()
+                    } catch (e: NumberFormatException) {
+                        channel.sendMessage("Please give a number " + Constants.PENSIVE_CHAIN).queue()
                     }
                 }
             } else {
-                startGame(channel);
+                startGame(channel)
             }
         } else {
-            if (args[1].length() > 1) {
-                if (args[1].toLowerCase().equals("stop")) {
-                    gameInProgress = false;
-                    channel.sendMessage("Game Over!").queue();
-                } else if (args[1].toLowerCase().equals("restart")) {
+            if (args[1].length > 1) {
+                if (args[1].lowercase(Locale.getDefault()) == "stop") {
+                    gameInProgress = false
+                    channel.sendMessage("Game Over!").queue()
+                } else if (args[1].lowercase(Locale.getDefault()) == "restart") {
                     try {
-                        hangman.restart();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        hangman!!.restart()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
-            } else if (args[1].length() == 1) {
-                char guess = Character.toLowerCase(args[1].charAt(0));
-                hangman.setCurrentGuess(guess);
+            } else if (args[1].length == 1) {
+                val guess = args[1][0].lowercaseChar()
+                hangman!!.currentGuess = guess
             } else {
-                startGame(channel);
+                startGame(channel)
             }
         }
     }
 
-    private void startGame(MessageChannel channel) {
+    private fun startGame(channel: MessageChannel) {
         try {
             if (hangman == null) {
-                hangman = new Hangman(channel);
-                hangman.statuszCheck();
+                hangman = Hangman(channel)
+                hangman!!.statusCheck()
             } else {
-                hangman.restart();
+                hangman!!.restart()
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    @Override
-    public List<String> getAliases() {
-        return List.of("hm");
+    override fun getAliases(): List<String> {
+        return java.util.List.of("hm")
+    }
+
+    companion object {
+        var gameInProgress = false
     }
 }
