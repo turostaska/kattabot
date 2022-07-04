@@ -1,7 +1,6 @@
 package Bot.ActualCommands.TextCommands;
 
 import Bot.CommandManagement.ICommand;
-import Bot.Utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -15,6 +14,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static Bot.Utils.UtilsKt.getJsonFromAPI;
 
 public class DictionaryCommand implements ICommand {
 
@@ -65,10 +66,10 @@ public class DictionaryCommand implements ICommand {
             if (args.length >= 2) {
                 String json = "";
                 if (!isSupportedDictionaryLanguage(args[1])) {//we are assuming it's english
-                    json = Utils.getJsonFromAPI(url + language + "/" + args[1]);
+                    json = getJsonFromAPI(url + language + "/" + args[1]);
                 } else {
                     if (args.length >= 3)
-                        json = Utils.getJsonFromAPI(url + args[1] + "/" + args[2]);
+                        json = getJsonFromAPI(url + args[1] + "/" + args[2]);
                 }
                 if (!json.isEmpty()) {
                     Gson g = new Gson();

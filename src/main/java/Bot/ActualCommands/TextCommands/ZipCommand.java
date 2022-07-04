@@ -1,7 +1,6 @@
 package Bot.ActualCommands.TextCommands;
 
 import Bot.CommandManagement.ICommand;
-import Bot.Utils.Utils;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -11,11 +10,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +18,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static Bot.Utils.UtilsKt.getPropertiesFromResourceFile;
 
 public class ZipCommand implements ICommand {
 
@@ -142,11 +139,11 @@ public class ZipCommand implements ICommand {
     }
 
     private void convertMessagesToHTML(List<Message> messages) {
-        StringBuilder HTMLString = new StringBuilder(Utils.getPropertiesFromResourceFile("ZipCommandHTML.properties").getProperty("Start"));
+        StringBuilder HTMLString = new StringBuilder(getPropertiesFromResourceFile("ZipCommandHTML.properties").getProperty("Start"));
         for (Message message : messages) {
             HTMLString.append(messageToHTML(message));
         }
-        HTMLString.append(Utils.getPropertiesFromResourceFile("ZipCommandHTML.properties").getProperty("End"));
+        HTMLString.append(getPropertiesFromResourceFile("ZipCommandHTML.properties").getProperty("End"));
 
         saveHTMLToFile(HTMLString.toString());
     }

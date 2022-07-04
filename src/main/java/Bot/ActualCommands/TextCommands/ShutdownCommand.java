@@ -3,12 +3,13 @@ package Bot.ActualCommands.TextCommands;
 import Bot.CommandManagement.GeneralCommandManager;
 import Bot.CommandManagement.ICommand;
 import Bot.Utils.Constants;
-import Bot.Utils.Utils;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+
+import static Bot.Utils.UtilsKt.getPropertiesFromResourceFile;
 
 public class ShutdownCommand implements ICommand {
 
@@ -43,6 +44,6 @@ public class ShutdownCommand implements ICommand {
     }
 
     private String getOwner() {
-        return Utils.getPropertiesFromResourceFile("config/ConfigurationKeys.properties").getProperty("OwnerId");
+        return getPropertiesFromResourceFile("config/ConfigurationKeys.properties").getProperty("OwnerId");
     }
 }

@@ -4,7 +4,6 @@ import Bot.CommandManagement.ICommand;
 import Bot.Service.Reminder;
 import Bot.Service.Translator;
 import Bot.Utils.Constants;
-import Bot.Utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import net.dv8tion.jda.api.entities.Guild;
@@ -15,24 +14,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.function.BiConsumer;
 
-import static Bot.Utils.Utils.getJsonPropertyValue;
+import static Bot.Utils.UtilsKt.*;
 
 public class QuizCommand implements ICommand {
 
@@ -195,7 +183,7 @@ public class QuizCommand implements ICommand {
         }
         correctAnswer = Character.forDigit(((answers.indexOf(currentQuestion.correct_answer) + 1)), 10);
         //System.out.println("The correct answer is: " + correctAnswer);
-        var embed = Utils.createBasicReactionEmbed(currentQuestion.question, new ArrayList<>(answers), language);
+        var embed = createBasicReactionEmbed(currentQuestion.question, new ArrayList<>(answers), language);
         embed.setDescription("Category: *" + currentQuestion.category + "*");
         embed.setColor(currentQuestion.difficulty.equals("easy") ? Color.GREEN : currentQuestion.difficulty.equals("medium") ? Color.ORANGE : Color.RED);
         ((TextChannel) channel).sendMessageEmbeds(embed.build()).queue();
@@ -279,7 +267,7 @@ public class QuizCommand implements ICommand {
     }
 
     private List<Categories.Category> getCategories() {
-        String receivedContent = Utils.getJsonFromAPI("https://opentdb.com/api_category.php");
+        String receivedContent = getJsonFromAPI("https://opentdb.com/api_category.php");
 
         Gson g = new Gson();
         var categoriesResponse = g.fromJson(receivedContent, Categories.class);
@@ -293,14 +281,14 @@ public class QuizCommand implements ICommand {
 
         url += "&token=" + questionToken;
 
-        String receivedContent = Utils.getJsonFromAPI(url);
+        String receivedContent = getJsonFromAPI(url);
 
         Integer responseCode = Integer.parseInt(getJsonPropertyValue(receivedContent, "response_code"));
 
         if (responseCode > 0) {
             requestToken();
             url = url.substring(0, url.lastIndexOf("=") + 1) + questionToken;
-            receivedContent = Utils.getJsonFromAPI(url);
+            receivedContent = getJsonFromAPI(url);
         }
 
         Gson g = new Gson();
@@ -395,7 +383,7 @@ public class QuizCommand implements ICommand {
 
         String updateUrl = db_url + serverId + "/" + userId + "/update";
         String jsonToSend = "{\"serverID\": " + serverId + ", \"userID\": " + userId + ", \"Points\": {\"" + category + "\": " + currentStreak + "}}";
-        int status = Utils.sendHttpRequest(updateUrl, "POST", jsonToSend);
+        int status = sendHttpRequest(updateUrl, "POST", jsonToSend);
         LOGGER.info("Update request sent, received response code " + status);
     }
 
@@ -466,7 +454,7 @@ public class QuizCommand implements ICommand {
     }
 
     private void requestToken() {
-        String json = Utils.getJsonFromAPI("https://opentdb.com/api_token.php?command=request");
+        String json = getJsonFromAPI("https://opentdb.com/api_token.php?command=request");
 
         questionToken = getJsonPropertyValue(json, "token");
         LOGGER.info("Token is: " + questionToken);

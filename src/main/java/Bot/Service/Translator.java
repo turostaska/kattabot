@@ -1,7 +1,6 @@
 package Bot.Service;
 
 import Bot.Utils.Constants;
-import Bot.Utils.Utils;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.translate.Translate;
 import com.google.cloud.translate.TranslateOptions;
@@ -13,6 +12,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import static Bot.Utils.UtilsKt.getPropertiesFromResourceFile;
 
 //Singleton class with lazy loading
 public final class Translator {
@@ -59,7 +60,7 @@ public final class Translator {
     }
 
     private static String readTranslationAPIKey() {
-        return Utils.getPropertiesFromResourceFile("config/ConfigurationKeys.properties").getProperty("TranslatorKeyFile");
+        return getPropertiesFromResourceFile("config/ConfigurationKeys.properties").getProperty("TranslatorKeyFile");
     }
 
     public String translate(String from, String to, String message) {

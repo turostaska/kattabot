@@ -1,6 +1,5 @@
 package Bot.LavaPlayer;
 
-import Bot.Utils.Utils;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -15,6 +14,8 @@ import java.awt.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static Bot.Utils.UtilsKt.isActualUserLeftInVoiceChannel;
 
 public class TrackScheduler extends AudioEventAdapter {
 
@@ -95,7 +96,7 @@ public class TrackScheduler extends AudioEventAdapter {
             player.destroy();
         }
 
-        if (!Utils.isActualUserLeftInVoiceChannel(event.getJDA().getAudioManagers().get(0).getConnectedChannel()))
+        if (!isActualUserLeftInVoiceChannel(event.getJDA().getAudioManagers().get(0).getConnectedChannel()))
             event.getJDA().getAudioManagers().get(0).closeAudioConnection();
 
         // endReason == FINISHED: A track finished or died by an exception (mayStartNext = true).

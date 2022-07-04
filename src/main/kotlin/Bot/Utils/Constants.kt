@@ -1,30 +1,21 @@
-package Bot.Utils;
+package Bot.Utils
 
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
 
-import java.util.Map;
+object Constants {
+    const val PREFIX = "!"
+    const val SMILING_FACE_WITH_3_HEARTS = ":smiling_face_with_3_hearts:"
+    const val SLIGHT_SMILE = ":slight_smile:"
+    const val PENSIVE = ":pensive:"
+    const val PENSIVE_CHAIN = ":pensive: :pensive: :pensive: :thumbsup:"
+    const val THINKING = ":thinking:"
+    const val TRIUMPH = ":triumph:"
+    const val FACE_WITH_RAISED_EYEBROWS = ":face_with_raised_eyebrow:"
 
-public final class Constants {
-    public static final String PREFIX = "!";
-
-    public static final String SMILING_FACE_WITH_3_HEARTS = ":smiling_face_with_3_hearts:";
-    public static final String SLIGHT_SMILE = ":slight_smile:";
-    public static final String PENSIVE = ":pensive:";
-    public static final String PENSIVE_CHAIN = ":pensive: :pensive: :pensive: :thumbsup:";
-    public static final String THINKING = ":thinking:";
-    public static final String TRIUMPH = ":triumph:";
-    public static final String FACE_WITH_RAISED_EYEBROWS = ":face_with_raised_eyebrow:";
-
-    private static Map<Guild, TextChannel> defaultTextChannels = null;
-
-    public static void setDefaultTextChannels(Map<Guild, TextChannel> map) {
-        if (defaultTextChannels == null)
-            defaultTextChannels = map;
+    @JvmStatic
+    var defaultTextChannels: Map<Guild, TextChannel>? = null
+    set(map) {
+        if (defaultTextChannels == null) field = map
     }
-
-    public static Map<Guild, TextChannel> getDefaultTextChannels() {
-        return defaultTextChannels;
-    }
-
 }

@@ -1,7 +1,7 @@
 package Bot
 
 import Bot.Utils.Constants
-import Bot.Utils.Utils
+import Bot.Utils.getPropertiesFromResourceFile
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
@@ -22,8 +22,7 @@ object App : ListenerAdapter() {
         GatewayIntent.GUILD_VOICE_STATES,
     )
 
-    private val token: String = Utils
-        .getPropertiesFromResourceFile("config/ConfigurationKeys.properties")
+    private val token: String = getPropertiesFromResourceFile("config/ConfigurationKeys.properties")
         .getProperty("DiscordToken")
 
     init {
@@ -44,7 +43,7 @@ object App : ListenerAdapter() {
 }
 
 fun main() = try {
-    Constants.setDefaultTextChannels(App.defaultChannels)
+    Constants.defaultTextChannels = App.defaultChannels
 } catch (e: Exception) {
     e.printStackTrace()
 }

@@ -1,9 +1,9 @@
 package Bot.ActualCommands.AudioCommands;
 
 import Bot.CommandManagement.ICommand;
-import Bot.Utils.Constants;
 import Bot.LavaPlayer.GuildAudioManager;
 import Bot.LavaPlayer.TrackScheduler;
+import Bot.Utils.Constants;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class LoopCommand implements ICommand {
