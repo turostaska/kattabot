@@ -11,3 +11,4 @@ data/tmp
 
 *.log
 *.out
+/src/main/resources/config/

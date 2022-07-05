@@ -51,7 +51,7 @@ fun getJsonFromAPI(url: String): String = StringBuilder().apply {
     }
 }.toString()
 
-fun getJsonPropertyValue(json: String, value: String) =
+fun getJsonPropertyValue(json: String, value: String): String =
     JsonParser().parse(json).asJsonObject[value].asString
 
 fun sendHttpRequest(
@@ -86,3 +86,5 @@ fun File.writeLine(line: String) = this.bufferedWriter().use {
     it.write(line)
     it.newLine()
 }
+
+fun Char.isAlphabetic() = Character.isAlphabetic(this.code)

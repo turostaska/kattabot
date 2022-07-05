@@ -1,11 +1,13 @@
 package Bot.Service
 
-import Bot.ActualCommands.TextCommands.HangmanCommand
 import Bot.Utils.Constants
+import Bot.Utils.isAlphabetic
 import Bot.Utils.writeLine
 import net.dv8tion.jda.api.entities.MessageChannel
-import java.io.*
+import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.*
+import kotlin.random.Random.Default.nextInt
 import kotlin.system.exitProcess
 
 const val wordsFile = "data/words_hu.txt"
@@ -13,43 +15,51 @@ const val wordsFile = "data/words_hu.txt"
 class Hangman(
     val channel: MessageChannel,
 ) {
-    private var status = 0
+    private val LOGGER = LoggerFactory.getLogger(Hangman::class.java)
+
+    var gameInProgress = false
 
     private val wordList = File(wordsFile).readLines().filter{ it.isNotBlank() }.map { it.lowercase() }.toList()
 
     private var currentWord: String = ""
     private var maskedWord: String = ""
 
-    var currentGuess = 0.toChar()
-        set(value) {
-            if (Character.isAlphabetic(currentGuess.code)) {
+    // todo: this may not be needed
+    private var currentGuess = 0.toChar()
+        private set(value) {
+            if (value.isAlphabetic()) {
                 field = value.lowercaseChar()
-                guess()
             } else {
-                channel.sendMessage("Gonna need a letter!").queue()
+                throw RuntimeException("Provided character $value is not an alphabetic character.")
             }
         }
 
     private var errorCount = 0
     private val guessedLetters = mutableSetOf<Char>()
 
-    init {
-        HangmanCommand.gameInProgress = true
-    }
-
-    @Throws(RuntimeException::class)
+    @Throws(IllegalArgumentException::class)
     fun chooseWord() {
         currentWord = wordList.random()
         require (currentWord.isNotBlank()) { "Couldn't fetch a word from the list!" }
-        maskedWord = "-".repeat(currentWord.length)
+        LOGGER.info("The chosen word is $currentWord")
+        maskedWord = currentWord.map { if (it.isAlphabetic()) '-' else it }.joinToString("")
     }
 
     private val wordRevealed get() = (maskedWord == currentWord)
     private val wordNotYetRevealed get() = !wordRevealed
 
-    private fun guess() {
-        // todo: check if guess in guessedLetters
-        // todo: guess as parameter
+    fun guess(guessedLetter: Char) {
+        if (guessedLetter.lowercaseChar() in guessedLetters) {
+            channel.sendMessage("Letter was already guessed, try another one.").queue()
+            return
+        }
+
+        try {
+            this.currentGuess = guessedLetter
+        } catch (e: RuntimeException) {
+            channel.sendMessage(e.message.orEmpty()).queue()
+            return
+        }
 
         var guessIsCorrect = false
         val maskedChars = maskedWord.toCharArray()
@@ -60,63 +70,55 @@ class Hangman(
             }
         }
         if (!guessIsCorrect) errorCount++
-        maskedWord = maskedChars.toString()
+        maskedWord = maskedChars.joinToString(separator = "")
 
         if (wordNotYetRevealed) {
             guessedLetters += currentGuess
-            val letters = guessedLetters.joinToString()
+
             if (errorCount < errorCountLimit) {
                 channel.sendMessage("""
-                    Error count: $errorCount
-                    $maskedWord
-                    Guess another letter!
-                    Already guessed letters: $letters
-                """).queue()
+                    |Error count: $errorCount
+                    |$maskedWord
+                    |Guess another letter!
+                    |Already guessed letters: ${guessedLetters.joinToString()}
+                """.trimMargin()).queue()
             } else { // Game over
                 channel.sendMessage("""
-                    $maskedWord
-                    You lost! ${Constants.SWEAT}${Constants.SWEAT}
-                    The word was $currentWord!
-                """).queue()
-                HangmanCommand.gameInProgress = false
-                guessedLetters.clear()
+                    |$maskedWord
+                    |You lost! ${Constants.SWEAT}${Constants.SWEAT}
+                    |The word was $currentWord!
+                """.trimMargin()).queue()
+                end()
             }
         } else {
             channel.sendMessage("""
-                $maskedWord
-                You won! ${Constants.HUGGING}${Constants.HUGGING}${Constants.HUGGING}
-            """).queue()
-            HangmanCommand.gameInProgress = false
-            guessedLetters.clear()
-        }
-    }
-
-    @Throws(Exception::class)
-    fun statusCheck() {
-        when (status) {
-            0 -> start()
-            1 -> stop()
-            2 -> restart()
+                |$maskedWord
+                |You won! ${Constants.HUGGING}${Constants.HUGGING}${Constants.HUGGING}
+            """.trimMargin()).queue()
+            end()
         }
     }
 
     @Throws(Exception::class)
     fun start() {
+        gameInProgress = true
         chooseWord()
         errorCount = 0
         channel.sendMessage("""
-            $maskedWord
-            Guess a letter!
-        """).queue()
+            |$maskedWord
+            |Guess a letter!
+        """.trimMargin()).queue()
     }
 
     @Throws(Exception::class)
     fun restart() {
-        HangmanCommand.gameInProgress = true
-        errorCount = 0
         channel.sendMessage("Restart:\n")
-        status = 0
-        statusCheck()
+        start()
+    }
+
+    fun end() {
+        gameInProgress = false
+        guessedLetters.clear()
     }
 
     private fun stop() {
@@ -125,11 +127,12 @@ class Hangman(
     }
 
     //segitseg(keresettSzo)   shows a letter for 33% of the error points
-    fun segitseg(kapottSzo: String, hatterSzo: String): String {
+    fun help(kapottSzo: String, hatterSzo: String): String {
+        TODO()
         var hatterSzo = hatterSzo
         var vanHianyzoBetu = false
-        var randomNumber = randomnumber(kapottSzo.length - 1)
-        for (i in 0 until kapottSzo.length) {
+        var randomNumber = nextInt(kapottSzo.length - 1)
+        for (i in kapottSzo.indices) {
             if (hatterSzo[i] == '-') {
                 vanHianyzoBetu = true
                 break
@@ -137,7 +140,7 @@ class Hangman(
         }
         if (vanHianyzoBetu) {
             while (hatterSzo[randomNumber] != '-') {
-                randomNumber = randomnumber(kapottSzo.length - 1)
+                randomNumber = nextInt(kapottSzo.length - 1)
             }
         } else {
             return hatterSzo
@@ -152,11 +155,11 @@ class Hangman(
         return hatterSzo.lowercase(Locale.getDefault())
     }
 
+    // todo
     @Throws(Exception::class)
     fun addWord(word: String) = File(wordsFile).writeLine(word)
 
     companion object {
-        @JvmField
         var errorCountLimit = 11
     }
 }
